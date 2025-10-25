@@ -2,7 +2,7 @@
 Quick test without interactive prompts
 """
 
-from tools import search_knowyourmeme
+from server.tools import search_knowyourmeme
 
 def main():
     """Test the Know Your Meme search function"""

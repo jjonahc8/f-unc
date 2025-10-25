@@ -6,9 +6,23 @@ import os
 import json
 import requests
 from bs4 import BeautifulSoup
-from typing import List, Dict
+from typing import List, Dict, Optional
 from langchain.tools import tool
 from openai import OpenAI
+from pydantic import BaseModel, Field, HttpUrl
+
+    
+
+class MemeExplanation(BaseModel):
+    """Structured response for meme format explanations"""
+    meme_name: str
+    url: str
+    about: str
+    origin: str
+
+class KnowYourMemeResult(BaseModel):
+    """ List of MemeExplanation results """
+    results: List[MemeExplanation]
 
 
 @tool
@@ -73,12 +87,14 @@ def search_knowyourmeme(meme_name: str) -> str:
                     if origin_p:
                         origin = origin_p.get_text(strip=True)[:800]
 
-                results.append({
-                    'title': title,
-                    'url': meme_url,
-                    'about': about or "No description available",
-                    'origin': origin or "No origin information available"
-                })
+                results.append(
+                    MemeExplanation(
+                    meme_name=title,
+                    url=meme_url,
+                    about=about or "No description available",
+                    origin=origin or "No origin information available"
+                    )
+                )
 
             except Exception as e:
                 print(f"Error fetching meme page: {e}")
@@ -87,14 +103,15 @@ def search_knowyourmeme(meme_name: str) -> str:
         if not results:
             return f"No results found on Know Your Meme for '{meme_name}'."
 
-        # Format output
+        # Format output as string for LLM consumption
         output = f"Know Your Meme results for '{meme_name}':\n\n"
+        # Output only contains content from top 3 results
         for i, result in enumerate(results[:3], 1):
-            output += f"{i}. {result['title']}\n"
-            output += f"   URL: {result['url']}\n\n"
-            output += f"   ABOUT:\n   {result['about']}\n\n"
-            if result['origin']:
-                output += f"   ORIGIN:\n   {result['origin']}\n\n"
+            output += f"{i}. {result.meme_name}\n"
+            output += f"   URL: {result.url}\n\n"
+            output += f"   ABOUT:\n   {result.about}\n\n"
+            if result.origin:
+                output += f"   ORIGIN:\n   {result.origin}\n\n"
             output += "-" * 70 + "\n\n"
 
         return output
