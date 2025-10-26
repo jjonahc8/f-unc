@@ -68,6 +68,51 @@ cd client && npm install && npm run dev
 - `ANTHROPIC_API_KEY`: Claude API key
 - `YOUTUBE_API_KEY`: YouTube Data API v3 key
 
+## 🚢 Deploy to Vercel
+
+### Frontend Deployment
+
+1. **Install Vercel CLI** (optional):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy from CLI**:
+   ```bash
+   cd client
+   vercel
+   ```
+
+3. **Or deploy via GitHub**:
+   - Push your code to GitHub
+   - Visit [vercel.com](https://vercel.com)
+   - Import your repository
+   - Vercel auto-detects Next.js configuration
+   - Add environment variable: `NEXT_PUBLIC_API_URL` (your backend URL)
+
+### Backend Deployment Options
+
+**Option 1: Railway/Render/Fly.io**
+```bash
+# Install dependencies and run
+pip install -r requirements.txt
+uvicorn server.api:app --host 0.0.0.0 --port $PORT
+```
+
+**Option 2: Docker**
+```dockerfile
+FROM python:3.12
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY server/ ./server/
+CMD ["uvicorn", "server.api:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+**Environment Variables for Backend**:
+- `ANTHROPIC_API_KEY`
+- `YOUTUBE_API_KEY`
+
 ## 📁 Project Structure
 
 ```
