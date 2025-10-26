@@ -184,49 +184,49 @@ def explainer_node(state: MemeResearchState) -> MemeResearchState:
     sociolect_prompts = {
         "boomer": """You are explaining internet memes to Baby Boomers (born 1946-1964) who may not be familiar with internet culture.
 
-Style guidelines:
-- Use very clear, simple language with NO slang or internet jargon
-- Make comparisons to traditional media (TV shows, newspapers, etc.)
-- Explain every internet term you use
-- Be patient and thorough - assume minimal internet culture knowledge
-- Use formal but friendly tone
-- Keep it concise (3-4 short paragraphs)
+        Style guidelines:
+        - Use very clear, simple language with NO slang or internet jargon
+        - Make comparisons to traditional media (TV shows, newspapers, etc.) from 1946-1964
+        - Explain every internet term you use
+        - Be patient and thorough - assume minimal internet culture knowledge
+        - Use formal but friendly tone
+        - Keep it concise (3-4 short paragraphs)
 
-Your explanation should help someone who didn't grow up with the internet understand both WHAT the meme is and WHY it's popular.""",
+        Your explanation should help someone who didn't grow up with the internet understand both WHAT the meme is and WHY it's popular.""",
 
         "gen-x": """You are explaining internet memes to Generation X (born 1965-1980) who understand technology but may not follow all internet trends.
 
-Style guidelines:
-- Use clear language, minimal slang
-- You can reference 90s/2000s pop culture they'd know
-- Explain internet-specific terms briefly
-- Conversational but informative tone
-- Keep it concise (3 short paragraphs)
+        Style guidelines:
+        - Use clear language, minimal slang
+        - You can reference pop culture from 1990 to 2000s. 
+        - Explain internet-specific terms briefly
+        - Conversational but informative tone
+        - Keep it concise (3 short paragraphs)
 
-Your explanation should help someone tech-savvy but not chronically online understand the meme's context and appeal.""",
+        Your explanation should help someone tech-savvy but not chronically online understand the meme's context and appeal.""",
 
         "millenial": """You are explaining internet memes to Millennials (born 1981-1996) who grew up with the internet and understand online culture.
 
-Style guidelines:
-- Use casual, friendly language
-- You can use some internet terms without explanation
-- Reference early internet culture (forums, early social media)
-- Conversational, slightly humorous tone
-- Keep it concise (2-3 paragraphs)
+        Style guidelines:
+        - Use casual, friendly language
+        - You can use some internet terms without explanation
+        - Reference early internet culture (forums, early social media)
+        - Conversational, slightly humorous tone
+        - Keep it concise (2-3 paragraphs)
 
-Your explanation should help someone familiar with internet culture understand this specific meme's nuances.""",
+        Your explanation should help someone familiar with internet culture understand this specific meme's nuances.""",
 
         "gen-z": """You are explaining internet memes to Gen Z (born 1997-2012) who are digital natives and very familiar with internet culture.
 
-Style guidelines:
-- Use casual, informal language
-- Internet slang is fine - they'll understand it
-- Be brief and to-the-point
-- Can reference current internet trends and platforms
-- Conversational, witty tone
-- Keep it very concise (2 short paragraphs)
+        Style guidelines:
+        - Use casual, informal language
+        - Internet slang is fine - they'll understand it
+        - Be brief and to-the-point
+        - Can reference current internet trends and platforms
+        - Conversational, witty tone
+        - Keep it very concise (2 short paragraphs)
 
-Your explanation should provide context and background they might not know about this specific meme."""
+        Your explanation should provide context and background they might not know about this specific meme."""
     }
 
     # Get the appropriate prompt or default to gen-z
@@ -242,9 +242,9 @@ Use the language patterns above to inform your writing style. Incorporate approp
 Using the curated data provided:
 1. Briefly introduce what the meme is and where it came from.
 2. Explain what it means and how people use it.
-3. Add a quick note on why people find it funny or relatable.
+3. Add a quick note on why people find it funny.
 
-End with a "Sources" section in markdown format listing URLs used."""
+Do NOT include a sources section. Just provide the explanation."""
 
     curated_text = f"""
 Meme: {curated.get('name', 'Unknown')}
@@ -254,8 +254,6 @@ About: {curated.get('about', 'N/A')}
 Origin: {curated.get('origin', 'N/A')}
 
 Usage: {curated.get('usage', 'N/A')}
-
-Sources: {', '.join(curated.get('sources', []))}
 """
 
     messages = [

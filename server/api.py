@@ -22,9 +22,6 @@ class Explanation(BaseModel):
     """Response model for meme explanation endpoint"""
     meme_name: str = Field(..., description="Official name of the meme")
     explanation: str = Field(..., description="Comprehensive explanation of the meme")
-    sources: List[str] = Field(..., description="URLs used as sources")
-    media_url: str = Field(..., description="URL to media representation of the meme")
-    media_type: str = Field(..., description="Type of media (image, video, gif, etc.)")
 
 
 class VideoResult(BaseModel):
@@ -134,23 +131,10 @@ async def explain_meme(
         explanation = final_state.get("final_explanation", "")
         sources = final_state.get("sources", [])
 
-        # Try to get media URL from sources (first source is typically the KYM page)
-        media_url = ""
-        media_type = "image"
-
-        if sources:
-            # Use the first source as a reference
-            media_url = sources[0]
-            # In a production system, you would scrape the actual image URL from the page
-            # For now, we'll use the KYM page URL as the media reference
-
         # Construct the response
         response = Explanation(
             meme_name=meme_name,
-            explanation=explanation,
-            sources=sources,
-            media_url=media_url if media_url else f"https://knowyourmeme.com/search?q={topic.replace(' ', '+')}",
-            media_type=media_type
+            explanation=explanation
         )
 
         return response

@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --green: #024f46;
+  --black: #1a1a1a;
+  --offwhite: #ffffeb;
+}
+
+body {
+  background-color: var(--offwhite);
+  color: var(--black);
+  font-family: var(--font-geist-mono), 'Courier New', Courier, monospace;
+  overflow-x: hidden;
+}
+
+@keyframes flow1 {
+  0% {
+    transform: translateX(-100%) rotate(-5deg);
+  }
+  100% {
+    transform: translateX(100vw) rotate(-5deg);
+  }
+}
+
+@keyframes flow2 {
+  0% {
+    transform: translateX(100vw) rotate(3deg);
+  }
+  100% {
+    transform: translateX(-100%) rotate(3deg);
+  }
+}
+
+@keyframes flow3 {
+  0% {
+    transform: translateX(-50%) rotate(-2deg);
+  }
+  100% {
+    transform: translateX(100vw) rotate(-2deg);
+  }
+}
+
+.flowing-text {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 3rem;
+  font-weight: 300;
+  opacity: 0.15;
+  pointer-events: none;
+  font-family: var(--font-geist-mono), 'Courier New', Courier, monospace;
+}
+
+.flow-1 {
+  top: 15%;
+  animation: flow1 25s linear infinite;
+  color: var(--black);
+}
+
+.flow-2 {
+  top: 45%;
+  animation: flow2 30s linear infinite;
+  color: var(--green);
+}
+
+.flow-3 {
+  top: 75%;
+  animation: flow3 28s linear infinite;
+  color: var(--black);
+}
