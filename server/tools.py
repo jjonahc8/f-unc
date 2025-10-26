@@ -38,10 +38,11 @@ def search_knowyourmeme(meme_name: str) -> str:
         # Search Know Your Meme
         search_url = f"https://knowyourmeme.com/search?q={meme_name.replace(' ', '+')}"
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
 
-        response = requests.get(search_url, headers=headers, timeout=10)
+        # Increased timeout to 30 seconds
+        response = requests.get(search_url, headers=headers, timeout=30)
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -53,17 +54,32 @@ def search_knowyourmeme(meme_name: str) -> str:
         search_items = soup.select('a.item[href*="/memes/"]')[:5]  # Get top 5 results
 
         for item in search_items:
-            # Extract the meme URL and title
-            meme_url = f"https://knowyourmeme.com{item['href']}"
-            title = item.get('data-title', 'Unknown')
+            # Extract the meme URL from href
+            href = item.get('href', '')
 
-            # If no data-title, try getting text content
-            if title == 'Unknown':
-                title = item.get_text(strip=True).split('\n')[0] if item.get_text(strip=True) else "Unknown"
+            # Skip invalid URLs
+            if not href or href.startswith('#'):
+                continue
+
+            # Build full URL
+            meme_url = f"https://knowyourmeme.com{href}" if not href.startswith('http') else href
+
+            # Extract title - try data-title attribute first, then text content
+            title = item.get('data-title', '')
+            if not title:
+                # Get text from the link, excluding image alt text
+                text_content = item.get_text(strip=True)
+                if text_content:
+                    # Split by newline and take first non-empty part
+                    title = text_content.split('\n')[0].strip()
+
+            if not title:
+                title = "Unknown"
 
             # Fetch the individual meme page
             try:
-                meme_response = requests.get(meme_url, headers=headers, timeout=10)
+                # Increased timeout to 30 seconds
+                meme_response = requests.get(meme_url, headers=headers, timeout=30)
                 meme_response.raise_for_status()
                 meme_soup = BeautifulSoup(meme_response.text, 'html.parser')
 
@@ -71,21 +87,45 @@ def search_knowyourmeme(meme_name: str) -> str:
                 about = ""
                 origin = ""
 
-                # Look for About section (h2 with id='about')
+                # Look for About section - try multiple methods
+                # Method 1: h2 with id='about'
                 about_header = meme_soup.find('h2', id='about')
                 if about_header:
-                    # Get the next sibling paragraph
                     about_p = about_header.find_next_sibling('p')
                     if about_p:
                         about = about_p.get_text(strip=True)[:800]
 
-                # Look for Origin section (h2 with id='origin')
+                # Method 2: h2 containing text "About"
+                if not about:
+                    about_header = meme_soup.find('h2', string=lambda text: text and 'About' in text)
+                    if about_header:
+                        about_p = about_header.find_next_sibling('p')
+                        if about_p:
+                            about = about_p.get_text(strip=True)[:800]
+
+                # Method 3: Look for section with class 'bodycopy'
+                if not about:
+                    bodycopy = meme_soup.find('section', class_='bodycopy')
+                    if bodycopy:
+                        paragraphs = bodycopy.find_all('p')
+                        if paragraphs:
+                            about = ' '.join([p.get_text(strip=True) for p in paragraphs[:2]])[:800]
+
+                # Look for Origin section - try multiple methods
+                # Method 1: h2 with id='origin'
                 origin_header = meme_soup.find('h2', id='origin')
                 if origin_header:
-                    # Get the next sibling paragraph
                     origin_p = origin_header.find_next_sibling('p')
                     if origin_p:
                         origin = origin_p.get_text(strip=True)[:800]
+
+                # Method 2: h2 containing text "Origin"
+                if not origin:
+                    origin_header = meme_soup.find('h2', string=lambda text: text and 'Origin' in text)
+                    if origin_header:
+                        origin_p = origin_header.find_next_sibling('p')
+                        if origin_p:
+                            origin = origin_p.get_text(strip=True)[:800]
 
                 results.append(
                     MemeExplanation(
@@ -141,7 +181,6 @@ Provide a comprehensive explanation including:
 2. **Origin**: Where did it come from? When did it become popular?
 3. **Meaning/Usage**: How is it typically used? What message does it convey?
 4. **Examples**: Describe how the format works with examples
-5. **Cultural Context**: Why is it popular? What makes it funny/relatable?
 
 Write in a clear, educational style that anyone can understand."""
 

@@ -8,3 +8,7 @@ pydantic
 openai
 requests
 beautifulsoup4
+fastapi
+uvicorn[standard]
+chromadb
+httpx  # Required for ChromaDB HttpClient

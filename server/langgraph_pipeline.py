@@ -14,9 +14,24 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from dotenv import load_dotenv
 from server.tools import search_knowyourmeme
+from server.sociolect_context import SociolectContextManager, seed_sociolect_data
 import json
 
 load_dotenv()
+
+# Initialize ChromaDB Cloud context manager
+try:
+    context_manager = SociolectContextManager()
+
+    # Seed with language patterns if database is empty
+    # Check if we need to seed by trying to get patterns for gen-z
+    if not context_manager.get_all_patterns("gen-z"):
+        print("🌱 Initializing sociolect language patterns database...")
+        seed_sociolect_data(context_manager)
+except Exception as e:
+    print(f"⚠️  Error initializing ChromaDB Cloud: {e}")
+    print("Please check your CHROMA_API_KEY, CHROMA_TENANT, and CHROMA_DATABASE in .env")
+    raise
 
 
 # =============================================================================
@@ -26,6 +41,7 @@ load_dotenv()
 class MemeResearchState(TypedDict):
     """State that flows through the agent pipeline"""
     meme_name: str
+    sociolect: str  # Target generation: boomer, gen-x, millenial, gen-z
     raw_data: str  # From Researcher
     curated_data: dict  # From Curator
     final_explanation: str  # From Explainer
@@ -152,20 +168,82 @@ def explainer_node(state: MemeResearchState) -> MemeResearchState:
     llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
     curated = state["curated_data"]
+    sociolect = state.get("sociolect", "gen-z")
+    meme_name = state.get("meme_name", "")
 
-    system_prompt = """You are a meme expert who explains internet culture to older adults in clear, simple language.
+    # Retrieve generation-specific language patterns from ChromaDB
+    print(f"📚 Retrieving {sociolect} language patterns from ChromaDB...")
+    language_context = context_manager.get_formatted_context(
+        sociolect=sociolect,
+        query=meme_name,
+        n_results=8  # Get top 8 relevant language patterns
+    )
+    print(f"✓ Retrieved context for {sociolect}")
 
-Your goal is to make the explanation short, easy to follow, and a little funny.
-Avoid slang unless you're explaining it.
-Keep the tone conversational —
+    # Tailor the explanation style based on the target generation
+    sociolect_prompts = {
+        "boomer": """You are explaining internet memes to Baby Boomers (born 1946-1964) who may not be familiar with internet culture.
+
+Style guidelines:
+- Use very clear, simple language with NO slang or internet jargon
+- Make comparisons to traditional media (TV shows, newspapers, etc.)
+- Explain every internet term you use
+- Be patient and thorough - assume minimal internet culture knowledge
+- Use formal but friendly tone
+- Keep it concise (3-4 short paragraphs)
+
+Your explanation should help someone who didn't grow up with the internet understand both WHAT the meme is and WHY it's popular.""",
+
+        "gen-x": """You are explaining internet memes to Generation X (born 1965-1980) who understand technology but may not follow all internet trends.
+
+Style guidelines:
+- Use clear language, minimal slang
+- You can reference 90s/2000s pop culture they'd know
+- Explain internet-specific terms briefly
+- Conversational but informative tone
+- Keep it concise (3 short paragraphs)
+
+Your explanation should help someone tech-savvy but not chronically online understand the meme's context and appeal.""",
+
+        "millenial": """You are explaining internet memes to Millennials (born 1981-1996) who grew up with the internet and understand online culture.
+
+Style guidelines:
+- Use casual, friendly language
+- You can use some internet terms without explanation
+- Reference early internet culture (forums, early social media)
+- Conversational, slightly humorous tone
+- Keep it concise (2-3 paragraphs)
+
+Your explanation should help someone familiar with internet culture understand this specific meme's nuances.""",
+
+        "gen-z": """You are explaining internet memes to Gen Z (born 1997-2012) who are digital natives and very familiar with internet culture.
+
+Style guidelines:
+- Use casual, informal language
+- Internet slang is fine - they'll understand it
+- Be brief and to-the-point
+- Can reference current internet trends and platforms
+- Conversational, witty tone
+- Keep it very concise (2 short paragraphs)
+
+Your explanation should provide context and background they might not know about this specific meme."""
+    }
+
+    # Get the appropriate prompt or default to gen-z
+    base_prompt = sociolect_prompts.get(sociolect, sociolect_prompts["gen-z"])
+
+    system_prompt = f"""{base_prompt}
+
+IMPORTANT - Language Style Context:
+{language_context}
+
+Use the language patterns above to inform your writing style. Incorporate appropriate keywords, phrases, and tone naturally into your explanation. Match the grammar and sentence structure typical of this generation.
 
 Using the curated data provided:
 1. Briefly introduce what the meme is and where it came from.
 2. Explain what it means and how people use it.
 3. Add a quick note on why people find it funny or relatable.
 
-Keep it concise (under 3 short paragraphs). 
-Avoid long sentences, complex words, or deep internet jargon.
 End with a "Sources" section in markdown format listing URLs used."""
 
     curated_text = f"""
@@ -252,6 +330,7 @@ def main():
         # Initialize state
         initial_state = {
             "meme_name": meme_name,
+            "sociolect": "gen-z",  # Default to gen-z for CLI
             "raw_data": "",
             "curated_data": {},
             "final_explanation": "",
