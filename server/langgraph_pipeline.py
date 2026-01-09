@@ -23,15 +23,17 @@ load_dotenv()
 try:
     context_manager = SociolectContextManager()
 
-    # Seed with language patterns if database is empty
+    # Seed with language patterns if database is empty (only if initialization succeeded)
     # Check if we need to seed by trying to get patterns for gen-z
-    if not context_manager.get_all_patterns("gen-z"):
-        print("🌱 Initializing sociolect language patterns database...")
-        seed_sociolect_data(context_manager)
+    if not context_manager.initialization_error:
+        if not context_manager.get_all_patterns("gen-z"):
+            print("🌱 Initializing sociolect language patterns database...")
+            seed_sociolect_data(context_manager)
 except Exception as e:
     print(f"⚠️  Error initializing ChromaDB Cloud: {e}")
-    print("Please check your CHROMA_API_KEY, CHROMA_TENANT, and CHROMA_DATABASE in .env")
-    raise
+    print("App will continue with degraded functionality")
+    # Create a dummy context manager to avoid breaking the app
+    context_manager = None
 
 
 # =============================================================================
@@ -173,12 +175,16 @@ def explainer_node(state: MemeResearchState) -> MemeResearchState:
 
     # Retrieve generation-specific language patterns from ChromaDB
     print(f"📚 Retrieving {sociolect} language patterns from ChromaDB...")
-    language_context = context_manager.get_formatted_context(
-        sociolect=sociolect,
-        query=meme_name,
-        n_results=8  # Get top 8 relevant language patterns
-    )
-    print(f"✓ Retrieved context for {sociolect}")
+    if context_manager and not context_manager.initialization_error:
+        language_context = context_manager.get_formatted_context(
+            sociolect=sociolect,
+            query=meme_name,
+            n_results=8  # Get top 8 relevant language patterns
+        )
+        print(f"✓ Retrieved context for {sociolect}")
+    else:
+        print("⚠️  ChromaDB not available, using generic language patterns")
+        language_context = "No specific language patterns available - use general conversational style."
 
     # Tailor the explanation style based on the target generation
     sociolect_prompts = {

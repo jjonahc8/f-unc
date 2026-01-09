@@ -68,15 +68,22 @@ class SociolectContextManager:
         # Collection names for each sociolect
         self.collections = {}
         self.sociolects = ["boomer", "gen-x", "millenial", "gen-z"]
+        self.initialization_error = None
 
         # Initialize collections for each sociolect
         print(f"📚 Initializing collections...")
-        for sociolect in self.sociolects:
-            self.collections[sociolect] = self.client.get_or_create_collection(
-                name=f"sociolect_{sociolect}",
-                metadata={"description": f"Language patterns for {sociolect}"}
-            )
-        print(f"✅ Collections ready!")
+        try:
+            for sociolect in self.sociolects:
+                self.collections[sociolect] = self.client.get_or_create_collection(
+                    name=f"sociolect_{sociolect}",
+                    metadata={"description": f"Language patterns for {sociolect}"}
+                )
+            print(f"✅ Collections ready!")
+        except Exception as e:
+            self.initialization_error = str(e)
+            print(f"⚠️  Error initializing ChromaDB Cloud: {e}")
+            print(f"Please check your CHROMA_API_KEY, CHROMA_TENANT, and CHROMA_DATABASE in .env")
+            # Don't raise - allow app to start with degraded functionality
 
     def add_language_patterns(
         self,
@@ -99,6 +106,10 @@ class SociolectContextManager:
                 }
             ]
         """
+        if self.initialization_error:
+            print(f"⚠️  Cannot add patterns - ChromaDB not initialized: {self.initialization_error}")
+            return
+
         if sociolect not in self.collections:
             raise ValueError(f"Invalid sociolect: {sociolect}")
 
@@ -142,6 +153,10 @@ class SociolectContextManager:
         Returns:
             List of relevant language patterns with metadata
         """
+        if self.initialization_error:
+            print(f"⚠️  Cannot query context - ChromaDB not initialized: {self.initialization_error}")
+            return []
+
         if sociolect not in self.collections:
             raise ValueError(f"Invalid sociolect: {sociolect}")
 
@@ -182,6 +197,10 @@ class SociolectContextManager:
         Returns:
             List of all patterns
         """
+        if self.initialization_error:
+            print(f"⚠️  Cannot get patterns - ChromaDB not initialized: {self.initialization_error}")
+            return []
+
         if sociolect not in self.collections:
             raise ValueError(f"Invalid sociolect: {sociolect}")
 
@@ -203,6 +222,10 @@ class SociolectContextManager:
 
     def clear_collection(self, sociolect: str):
         """Clear all data from a sociolect collection"""
+        if self.initialization_error:
+            print(f"⚠️  Cannot clear collection - ChromaDB not initialized: {self.initialization_error}")
+            return
+
         if sociolect not in self.collections:
             raise ValueError(f"Invalid sociolect: {sociolect}")
 
