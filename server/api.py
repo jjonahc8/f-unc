@@ -81,7 +81,6 @@ app.add_middleware(
 # Create the graph once at startup
 meme_graph = create_meme_research_graph()
 
-
 # =============================================================================
 # 5. API ENDPOINTS
 # =============================================================================
